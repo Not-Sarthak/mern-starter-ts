@@ -1,5 +1,8 @@
 import express, { Request, Response } from "express";
 import dotenv from "dotenv";
+import { checkSchema, body, matchedData, query, validationResult } from "express-validator";
+
+import { createUserValidationSchema } from "./utils/validation-schemas";
 
 dotenv.config();
 
@@ -22,32 +25,44 @@ app.get("/", (req: Request, res: Response) => {
   res.status(200).send({ msg: "Hello, world!" });
 });
 
-app.get("/api/users", (req: Request, res: Response): any => {
-  console.log("Query:", req.query);
-  console.log("Params:", req.params);
+app.get(
+  "/api/users",
+  query("filter")
+    .isString()
+    .notEmpty()
+    .withMessage("Must Not be Empty")
+    .isLength({ min: 3, max: 10 })
+    .withMessage("Must be at least 3-10 characters"),
+  (req: Request, res: Response): any => {
+    console.log("Query:", req.query);
+    console.log("Params:", req.params);
 
-  const {
-    query: { filter, value },
-  } = req;
+    const result = validationResult(req);
+    console.log(result);
 
-  if (!filter || !value || (filter !== "id" && filter !== "username")) {
-    return res
-      .status(400)
-      .send({ msg: "Invalid filter. Use 'id' or 'username'." });
+    const {
+      query: { filter, value },
+    } = req;
+
+    if (!filter || !value || (filter !== "id" && filter !== "username")) {
+      return res
+        .status(400)
+        .send({ msg: "Invalid filter. Use 'id' or 'username'." });
+    }
+
+    const valueStr = Array.isArray(value) ? value[0] : value;
+
+    if (typeof valueStr !== "string") {
+      return res.status(400).send({ msg: "Invalid value. Expected a string." });
+    }
+
+    return res.status(200).send(
+      mockUsers.filter((user) => {
+        return user[filter as keyof typeof user]?.toString().includes(valueStr);
+      })
+    );
   }
-
-  const valueStr = Array.isArray(value) ? value[0] : value;
-
-  if (typeof valueStr !== "string") {
-    return res.status(400).send({ msg: "Invalid value. Expected a string." });
-  }
-
-  return res.status(200).send(
-    mockUsers.filter((user) => {
-      return user[filter as keyof typeof user]?.toString().includes(valueStr);
-    })
-  );
-});
+);
 
 app.get(
   "/api/users/:id",
@@ -77,17 +92,38 @@ app.get(
 
 // POST
 
-app.post("/api/users", (req: Request, res: Response): any => {
-  console.log(req.body);
+app.post(
+  "/api/users",
+  checkSchema(createUserValidationSchema),
+  (req: Request, res: Response): any => {
+    console.log(req.body);
 
-  const { body } = req;
-  const newUser = {
-    id: mockUsers[mockUsers.length - 1].id + 1,
-    ...body,
-  };
-  mockUsers.push(newUser);
-  return res.status(201).send(newUser);
-});
+    const result = validationResult(req);
+    console.log(result);
+
+    if (!result.isEmpty()) {
+      return res.status(400).send({
+        errors: result.array(),
+      });
+    }
+
+    const data = matchedData(req); // Returns validated data
+    console.log(data);
+
+    // const { body } = req;
+    const newUser: {
+      id: number;
+      username: string;
+    } = {
+      id: mockUsers[mockUsers.length - 1].id + 1,
+      ...(data as { username: string }),
+    };
+    mockUsers.push(newUser);
+    return res.status(201).send(newUser);
+  }
+);
+
+// PUT
 
 app.put("/api/users/:id", (req: Request, res: Response): any => {
   const {
@@ -116,6 +152,8 @@ app.put("/api/users/:id", (req: Request, res: Response): any => {
   });
 });
 
+// PATCH
+
 app.patch("/api/users/:id", (req: Request, res: Response): any => {
   const {
     body,
@@ -139,6 +177,8 @@ app.patch("/api/users/:id", (req: Request, res: Response): any => {
   };
   return res.sendStatus(200);
 });
+
+// DELETE
 
 app.delete("/api/users/:id", (req: Request, res: Response): any => {
   const {
