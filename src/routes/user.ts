@@ -23,6 +23,15 @@ router.get(
     console.log("Query:", req.query);
     console.log("Params:", req.params);
 
+    console.log(req.session.id);
+    req.sessionStore.get(req.session.id, (err, sessionData) => {
+      if (err) {
+        console.log(err);
+        throw err;
+      }
+      console.log(sessionData);
+    });
+
     const result = validationResult(req);
     console.log(result);
 
