@@ -107,9 +107,11 @@ router.post(
     const newUser: {
       id: number;
       username: string;
+      displayName: string;
+      password: string;
     } = {
       id: mockUsers[mockUsers.length - 1].id + 1,
-      ...(data as { username: string }),
+      ...(data as { username: string, displayName: string, password: string }),
     };
     mockUsers.push(newUser);
     return res.status(201).send(newUser);
