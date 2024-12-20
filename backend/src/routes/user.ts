@@ -1,13 +1,10 @@
 import { Router } from "express";
 import { Request, Response } from "express";
-import {
-  checkSchema,
-  matchedData,
-  query,
-  validationResult,
-} from "express-validator";
+import { checkSchema, matchedData, query, validationResult } from "express-validator";
 import { mockUsers } from "../utils/constants.js";
-import { createUserValidationSchema } from "../utils/validation-schemas.js";
+import { User } from "../schemas/user.js";
+import { createUserValidationSchema } from "../utils/schema-validation.js";
+import { hashPassword } from "../utils/helpers.js";
 
 const router = Router();
 
@@ -88,33 +85,28 @@ router.get(
 router.post(
   "/api/users",
   checkSchema(createUserValidationSchema),
-  (req: Request, res: Response): any => {
-    console.log(req.body);
-
+  async (req: Request, res: Response): Promise<any> => {
     const result = validationResult(req);
-    console.log(result);
 
     if (!result.isEmpty()) {
-      return res.status(400).send({
-        errors: result.array(),
-      });
+      return res.status(400).send(result.array());
     }
 
-    const data = matchedData(req); // Returns validated data
-    console.log(data);
+    const data = matchedData(req);  // Grabs all the validated fields for us
+    console.log("Data: ", data);
 
-    // const { body } = req;
-    const newUser: {
-      id: number;
-      username: string;
-      displayName: string;
-      password: string;
-    } = {
-      id: mockUsers[mockUsers.length - 1].id + 1,
-      ...(data as { username: string, displayName: string, password: string }),
-    };
-    mockUsers.push(newUser);
-    return res.status(201).send(newUser);
+    const { body } = req;
+
+    data.password = hashPassword(data.password);
+
+    const newUser = new User(body);
+    try {
+      const savedUser = await newUser.save();
+      return res.status(201).send(savedUser);
+    } catch (error) {
+      console.log(error);
+      return res.status(400).send({ msg: "Internal Server Error" });
+    }
   }
 );
 

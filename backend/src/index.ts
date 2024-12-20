@@ -3,8 +3,8 @@ import dotenv from "dotenv";
 import routes from "./routes/index.js";
 import cookieParser from "cookie-parser";
 import session from "express-session";
-import { mockUsers } from "./utils/constants.js";
 import passport from "passport";
+import mongoose from "mongoose";
 import "./strategies/local-strategy.js";
 
 dotenv.config();
@@ -20,11 +20,24 @@ const PORT = process.env.PORT || 3000;
 
 const app = express();
 
+if (!process.env.MONGO_URI) {
+  throw new Error('MONGO_URI environment variable is not defined');
+}
+
+mongoose
+  .connect(process.env.MONGO_URI || '', {})
+  .then(() => {
+    console.log("Connected to MongoDB");
+  })
+  .catch((err) => {
+    console.log("Error connecting to MongoDB", err);
+  });
+
 app.use(express.json());
 app.use(cookieParser("secret"));
 app.use(
   session({
-    secret: "lord sarthak",
+    secret: "sarthak",
     saveUninitialized: false,
     resave: false,
     cookie: {
@@ -47,10 +60,6 @@ app.get("/", (req: Request, res: Response) => {
   res.cookie("Hello", "World", { maxAge: 60000, signed: true });
   res.status(200).send({ msg: "Hello, world!" });
 });
-
-app.post("/api/auth", passport.authenticate(["local", "github"]), (req: Request, res: Response) => {
-  console.log("Here");
-})
 
 app.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
