@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import session from "express-session";
 import passport from "passport";
 import mongoose from "mongoose";
+import MongoStore from "connect-mongo";
 import "./strategies/local-strategy.js";
 
 dotenv.config();
@@ -21,11 +22,11 @@ const PORT = process.env.PORT || 3000;
 const app = express();
 
 if (!process.env.MONGO_URI) {
-  throw new Error('MONGO_URI environment variable is not defined');
+  throw new Error("MONGO_URI environment variable is not defined");
 }
 
 mongoose
-  .connect(process.env.MONGO_URI || '', {})
+  .connect(process.env.MONGO_URI || "", {})
   .then(() => {
     console.log("Connected to MongoDB");
   })
@@ -38,16 +39,18 @@ app.use(cookieParser("secret"));
 app.use(
   session({
     secret: "sarthak",
-    saveUninitialized: false,
-    resave: false,
+    saveUninitialized: true,
+    resave: true,
     cookie: {
       maxAge: 60000 * 60, // 1 Hr
     },
+    store: MongoStore.create({
+      client: mongoose.connection.getClient(),
+    }),
   })
 );
 app.use(passport.initialize());
 app.use(passport.session());
-// Route Middleware
 app.use(routes);
 
 app.get("/", (req: Request, res: Response) => {
