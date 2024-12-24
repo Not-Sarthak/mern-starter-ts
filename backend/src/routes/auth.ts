@@ -25,6 +25,7 @@ router.post("/api/auth/logout", (request: Request, response: Response): any => {
 });
 
 router.get("/api/auth/discord", passport.authenticate("discord"));
+
 router.get(
 	"/api/auth/discord/redirect",
 	passport.authenticate("discord"),

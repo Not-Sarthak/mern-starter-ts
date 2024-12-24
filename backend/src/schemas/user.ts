@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema({
   },
 });
 
+// Discord User Schema
 const DiscordUserSchema = new mongoose.Schema({
 	username: {
 		type: mongoose.Schema.Types.String,

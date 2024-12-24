@@ -1,10 +1,15 @@
 import { Router } from "express";
 import { Request, Response } from "express";
-import { checkSchema, matchedData, query, validationResult } from "express-validator";
+import {
+  checkSchema,
+  matchedData,
+  query,
+  validationResult,
+} from "express-validator";
 import { mockUsers } from "../utils/constants.js";
-import { User } from "../schemas/user.js";
 import { createUserValidationSchema } from "../utils/schema-validation.js";
-import { hashPassword } from "../utils/helpers.js";
+import { createUserHandler, getUserByIdHandler } from "../handlers/users.js";
+import { resolveIndexByUserId } from "../utils/middlewares.js";
 
 const router = Router();
 
@@ -56,58 +61,12 @@ router.get(
   }
 );
 
-router.get(
-  "/api/users/:id",
-  (req: Request<{ id: string }>, res: Response): any => {
-    const parseId = parseInt(req.params.id, 10);
-
-    if (isNaN(parseId)) {
-      return res.status(400).send({
-        msg: "Bad Request. Invalid ID.",
-      });
-    }
-
-    const findUser = mockUsers.find((user) => user.id === parseId);
-
-    if (!findUser) {
-      return res.status(404).send({
-        msg: "User not found",
-      });
-    }
-
-    return res.status(200).send({
-      msg: "User found",
-      user: findUser,
-    });
-  }
-);
+router.get("/api/users/:id", resolveIndexByUserId, getUserByIdHandler);
 
 router.post(
   "/api/users",
   checkSchema(createUserValidationSchema),
-  async (req: Request, res: Response): Promise<any> => {
-    const result = validationResult(req);
-
-    if (!result.isEmpty()) {
-      return res.status(400).send(result.array());
-    }
-
-    const data = matchedData(req);  // Grabs all the validated fields for us
-    console.log("Data: ", data);
-
-    const { body } = req;
-
-    data.password = hashPassword(data.password);
-
-    const newUser = new User(body);
-    try {
-      const savedUser = await newUser.save();
-      return res.status(201).send(savedUser);
-    } catch (error) {
-      console.log(error);
-      return res.status(400).send({ msg: "Internal Server Error" });
-    }
-  }
+  createUserHandler
 );
 
 router.put("/api/users/:id", (req: Request, res: Response): any => {
