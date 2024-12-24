@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import { createApp } from "../create-app.js";
 import { Express } from 'express'; 
 
-describe("create user and login", () => {
+describe("Create User and Login", () => {
 	let app: Express;
 	beforeAll(() => {
 		mongoose
