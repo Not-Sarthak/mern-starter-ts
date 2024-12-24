@@ -7,7 +7,8 @@
     "build": "tsc",
     "start": "npm run build && node dist/index.js",
     "dev": "nodemon --watch src --exec \"npm run build && node dist/index.js\"",
-    "test": "jest"
+    "test": "jest",
+    "test:e2e": "jest --testPathPattern=src/e2e"
   },
   "keywords": [],
   "author": "",
@@ -38,7 +39,9 @@
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.10.1",
+    "@types/supertest": "^6.0.2",
     "nodemon": "^3.1.7",
+    "supertest": "^7.0.0",
     "ts-jest": "^29.2.5",
     "typescript": "^5.7.2"
   }

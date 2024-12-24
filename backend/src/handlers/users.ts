@@ -1,5 +1,5 @@
 import { matchedData, validationResult } from "express-validator";
-import { mockUsers } from "../utils/constants";
+import { mockUsers } from "../utils/constants.js";
 import { hashPassword } from "../utils/helpers.js";
 import { User } from "../schemas/user.js";
 import { Request, Response } from "express";
